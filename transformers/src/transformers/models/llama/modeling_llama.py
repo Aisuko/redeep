@@ -760,8 +760,6 @@ class LlamaDecoderLayer(nn.Module):
         # amplification mlp effect
         if path_inter:
             hidden_states = residual
-        elif weight_reduce:
-            hidden_states = residual + reduce_ffn_weight*hidden_states
         else:
             hidden_states = residual + hidden_states
 
@@ -770,7 +768,10 @@ class LlamaDecoderLayer(nn.Module):
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
         hidden_states = self.mlp(hidden_states)
-        hidden_states = residual + hidden_states
+        if weight_reduce:
+            hidden_states = residual + reduce_ffn_weight*hidden_states
+        else:
+            hidden_states = residual + hidden_states
 
         outputs = (hidden_states,)
 
