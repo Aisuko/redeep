@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.getcwd()), 'transformers', 'src'))
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import json
 from torch.nn import functional as F
 from tqdm import tqdm
@@ -53,8 +53,6 @@ with open(source_info_path, 'r') as f:
         data = json.loads(line)
         source_info_dict[data['source_id']] = data
 
-
-
 if args.model_name == "llama2-7b":
     model_name = "meta-llama/llama-2-7b-chat-hf"
 elif args.model_name == "llama2-13b":
@@ -66,13 +64,13 @@ device = "cuda"
 
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    device_map="auto",
-    torch_dtype=torch.float16
+    torch_dtype=torch.float16,
+    device_map="auto"
 )
 
-model.to(device)
-
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+
 
 
 if args.model_name == "llama2-13b":
@@ -161,6 +159,7 @@ else:
     exit(-1) 
 
 # test response
+response = response[:2]
 
 for i in tqdm(range(len(response))):
     if response[i]['model'] == data_type and response[i]["split"] == "test":
@@ -170,8 +169,11 @@ for i in tqdm(range(len(response))):
         prompt =  source_info_dict[source_id]['prompt']
         messages = [
                     {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt[:12000]}
+                    {"role": "user", "content": prompt[:2000]}
                 ]
+        
+        print(f"Prompt is {prompt[:2000]}")
+
         text = tokenizer_for_temp.apply_chat_template(
             messages,
             tokenize=False,
@@ -211,7 +213,7 @@ for i in tqdm(range(len(response))):
                     output_hidden_states=True,
                     knowledge_layers=list(range(start, number))
                 )
-        logits_dict = {key: [value[0].to(device), value[1].to(device)] for key, value in logits_dict.items()}
+        logits_dict = {key: [value[0].cpu(), value[1].cpu()] for key, value in logits_dict.items()}
 
         # skip tokens without hallucination
         hidden_states = outputs["hidden_states"] # tuple ([batch, seq_len, vocab_size], ..., ) 
@@ -298,6 +300,7 @@ for i in tqdm(range(len(response))):
 # with open("./data/llama2_7B_response.json", "w") as f:
 #     json.dump(select_response, f, indent=4, ensure_ascii=False)
 
+
 if args.model_name == "llama2-7b":
     if args.dataset == "ragtruth":
         save_path = os.path.join(root, 'log', 'test_llama2_7B', 'llama2_7B_response_v1.json')
@@ -316,6 +319,8 @@ elif args.model_name == "llama3-8b":
 else:
     print("model name error")
     exit(-1)
+
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
 with open(save_path, "w") as f:
     json.dump(select_response, f, ensure_ascii=False)  

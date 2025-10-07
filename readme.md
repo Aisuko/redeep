@@ -1,5 +1,20 @@
 # ReDeEP
 
+```
+(workspace) ➜  ReDEeP-ICLR git:(main) ✗ accelerate estimate-memory meta-llama/llama-2-7b-chat-hf --library_name transformers
+Loading pretrained config for `meta-llama/llama-2-7b-chat-hf` from `transformers`...
+┌────────────────────────────────────────────────────────┐
+│Memory Usage for loading `meta-llama/llama-2-7b-chat-hf`│
+├───────┬─────────────┬──────────┬───────────────────────┤
+│ dtype │Largest Layer│Total Size│  Training using Adam  │
+├───────┼─────────────┼──────────┼───────────────────────┤
+│float32│  772.03 MB  │ 24.61 GB │        98.46 GB       │
+│float16│  386.02 MB  │ 12.31 GB │        49.23 GB       │
+│  int8 │  193.01 MB  │ 6.15 GB  │          N/A          │
+│  int4 │   96.5 MB   │ 3.08 GB  │          N/A          │
+└───────┴─────────────┴──────────┴───────────────────────┘
+```
+
 **Important**
 ```bash
 pip install -e transformers 
