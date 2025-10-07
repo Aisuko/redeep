@@ -1,3 +1,6 @@
 *.jsonl
 *.json
 *.zip
+*.pyc
+!.vscode/*.json
+!.devcontainer/*.json

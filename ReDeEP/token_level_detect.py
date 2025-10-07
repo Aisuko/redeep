@@ -1,3 +1,4 @@
+import os
 import sys
 sys.path.insert(0, '../transformers/src')
 import torch
@@ -8,6 +9,8 @@ from tqdm import tqdm
 import pdb
 import pickle
 import argparse
+
+root=os.getcwd()
 
 parser = argparse.ArgumentParser(description='Script for processing data and models.')
 parser.add_argument('--model_name', type=str, required=True, help='llama2-7b or llama2-13b or llama3-8b')
@@ -24,7 +27,7 @@ if args.dataset == "ragtruth":
     else:
         response_path = "../dataset/response.jsonl"
 elif args.dataset == "dolly":
-    response_path = "../dataset/response_dolly.jsonl"
+    response_path = os.path.join(root, 'dataset', 'response_dolly.jsonl')
 
 response = []
 with open(response_path, 'r') as f:
