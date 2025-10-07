@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.insert(0, '../transformers/src')
+sys.path.insert(0, os.path.join(os.path.dirname(os.getcwd()), 'transformers', 'src'))
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import json
@@ -9,6 +9,11 @@ from tqdm import tqdm
 import pdb
 import pickle
 import argparse
+from dotenv import load_dotenv
+from huggingface_hub import login
+
+load_dotenv()
+login(token=os.getenv('hf_token'))
 
 root=os.getcwd()
 
@@ -23,9 +28,9 @@ parser.add_argument(
 args = parser.parse_args()
 if args.dataset == "ragtruth":
     if args.model_name == "llama3-8b":
-        response_path = "../dataset/response_with_llama3_8b.jsonl"
+        response_path = os.path.join(root, 'dataset', 'response_with_llama3_8b.jsonl')
     else:
-        response_path = "../dataset/response.jsonl"
+        response_path = os.path.join(root, 'dataset', 'response.jsonl')
 elif args.dataset == "dolly":
     response_path = os.path.join(root, 'dataset', 'response_dolly.jsonl')
 
@@ -36,11 +41,11 @@ with open(response_path, 'r') as f:
         response.append(data)
 if args.dataset == "ragtruth":
     if args.model_name == "llama3-8b":
-        source_info_path = "../dataset/source_info.jsonl"
+        source_info_path = os.path.join(root, 'dataset', 'source_info.jsonl')
     else:
-        source_info_path = "../dataset/source_info.jsonl"
+        source_info_path = os.path.join(root, 'dataset', 'source_info.jsonl')
 elif args.dataset == "dolly":
-    source_info_path = "../dataset/source_info_dolly.jsonl"
+    source_info_path = os.path.join(root, 'dataset', 'source_info_dolly.jsonl')
 source_info_dict = {}
 
 with open(source_info_path, 'r') as f:
@@ -51,33 +56,37 @@ with open(source_info_path, 'r') as f:
 
 
 if args.model_name == "llama2-7b":
-    model_name = "llama2/llama-2-7b-chat-hf"
+    model_name = "meta-llama/llama-2-7b-chat-hf"
 elif args.model_name == "llama2-13b":
-    model_name = "llama2/llama-2-13b-chat-hf"
+    model_name = "meta-llama/llama-2-13b-chat-hf"
 elif args.model_name == "llama3-8b":
-    model_name = "llama3/Meta-Llama-3-8B-Instruct/"
+    model_name = "meta-llama/Meta-Llama-3-8B-Instruct/"
 
+device = "cuda"
 
 model = AutoModelForCausalLM.from_pretrained(
-    f"/home/sunhao_dai/PLMs/{model_name}",
+    model_name,
     device_map="auto",
     torch_dtype=torch.float16
 )
-tokenizer = AutoTokenizer.from_pretrained(f"/home/sunhao_dai/PLMs/{model_name}")
-device = "cuda"
+
+model.to(device)
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
 
 if args.model_name == "llama2-13b":
-    tokenizer_for_temp = AutoTokenizer.from_pretrained("/home/sunhao_dai/PLMs/llama2/llama-2-7b-chat-hf")
+    tokenizer_for_temp = AutoTokenizer.from_pretrained("meta-llama/llama-2-7b-chat-hf")
 else:
     tokenizer_for_temp = tokenizer
 
 
 if args.model_name == "llama2-7b":
-    topk_head_path = "./log/test_llama2_7B/topk_heads.json"
+    topk_head_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama2_7B', 'topk_heads.json')
 elif args.model_name == "llama2-13b":
-    topk_head_path = "./log/test_llama2_13B/topk_heads.json"
+    topk_head_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama2_13B', 'topk_heads.json')
 elif args.model_name == "llama3-8b":
-    topk_head_path = "./log/test_llama3_8B/topk_heads.json"
+    topk_head_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama3_8B', 'topk_heads.json')
 else:
     print("model name error")
     exit(-1)
@@ -151,6 +160,8 @@ else:
     print("model name error")
     exit(-1) 
 
+# test response
+
 for i in tqdm(range(len(response))):
     if response[i]['model'] == data_type and response[i]["split"] == "test":
         response_rag = response[i]['response']
@@ -171,8 +182,8 @@ for i in tqdm(range(len(response))):
         print("all_text_len:", len(input_text))
         print("prompt_len", len(prompt))
         print("respond_len", len(response_rag))
-        input_ids = tokenizer([input_text], return_tensors="pt").input_ids
-        prefix_ids = tokenizer([text], return_tensors="pt").input_ids
+        input_ids = tokenizer([input_text], return_tensors="pt").input_ids.to(device)
+        prefix_ids = tokenizer([text], return_tensors="pt").input_ids.to(device)
         continue_ids = input_ids[0, prefix_ids.shape[-1]:] # todo 这边要改成幻觉 token 的起止位置
         if "labels" in response[i].keys():
             hallucination_spans = calculate_hallucination_spans(response[i]['labels'], text, response_rag, tokenizer, prefix_ids.shape[-1])
@@ -289,19 +300,19 @@ for i in tqdm(range(len(response))):
 
 if args.model_name == "llama2-7b":
     if args.dataset == "ragtruth":
-        save_path = "./log/test_llama2_7B/llama2_7B_response_v1.json"
+        save_path = os.path.join(root, 'log', 'test_llama2_7B', 'llama2_7B_response_v1.json')
     elif args.dataset == "dolly":
-        save_path = "./log/test_llama2_7B/llama2_7B_response_v1_dolly.json"
+        save_path = os.path.join(root, 'log', 'test_llama2_7B', 'llama2_7B_response_v1_dolly.json')
 elif args.model_name == "llama2-13b":
     if args.dataset == "ragtruth":
-        save_path = "./log/test_llama2_13B/llama2_13B_response_v1.json"
+        save_path = os.path.join(root, 'log', 'test_llama2_13B', 'llama2_13B_response_v1.json')
     elif args.dataset == "dolly":
-        save_path = "./log/test_llama2_13B/llama2_13B_response_v1_dolly.json"
+        save_path = os.path.join(root, 'log', 'test_llama2_13B', 'llama2_13B_response_v1_dolly.json')
 elif args.model_name == "llama3-8b":
     if args.dataset == "ragtruth":
-        save_path = "./log/test_llama3_8B/llama3_8B_response_v1.json"
+        save_path = os.path.join(root, 'log', 'test_llama3_8B', 'llama3_8B_response_v1.json')
     elif args.dataset == "dolly":
-        save_path = "./log/test_llama3_8B/llama3_8B_response_v1_dolly.json"
+        save_path = os.path.join(root, 'log', 'test_llama3_8B', 'llama3_8B_response_v1_dolly.json')
 else:
     print("model name error")
     exit(-1)

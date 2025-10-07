@@ -619,6 +619,10 @@ class LlamaSdpaAttention(LlamaAttention):
         output_attentions: bool = False,
         use_cache: bool = False,
         cache_position: Optional[torch.LongTensor] = None,
+        disturb_head_ids: Optional[torch.LongTensor] = None,
+        add_attention_weight: Optional[torch.FloatTensor] = None,
+        select_heads_ids: Optional[torch.LongTensor] = None,
+        layer_id=None
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         if output_attentions:
             # TODO: Improve this warning with e.g. `model.config.attn_implementation = "manual"` once this is implemented.
@@ -634,6 +638,10 @@ class LlamaSdpaAttention(LlamaAttention):
                 output_attentions=output_attentions,
                 use_cache=use_cache,
                 cache_position=cache_position,
+                disturb_head_ids=disturb_head_ids,
+                add_attention_weight=add_attention_weight,
+                select_heads_ids=select_heads_ids,
+                layer_id=layer_id
             )
 
         bsz, q_len, _ = hidden_states.size()
