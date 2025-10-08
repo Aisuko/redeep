@@ -303,19 +303,19 @@ for i in tqdm(range(len(response))):
 
 if args.model_name == "llama2-7b":
     if args.dataset == "ragtruth":
-        save_path = os.path.join(root, 'log', 'test_llama2_7B', 'llama2_7B_response_v1.json')
+        save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama2_7B', 'llama2_7B_response_v1.json')
     elif args.dataset == "dolly":
-        save_path = os.path.join(root, 'log', 'test_llama2_7B', 'llama2_7B_response_v1_dolly.json')
+        save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama2_7B', 'llama2_7B_response_v1_dolly.json')
 elif args.model_name == "llama2-13b":
     if args.dataset == "ragtruth":
-        save_path = os.path.join(root, 'log', 'test_llama2_13B', 'llama2_13B_response_v1.json')
+        save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama2_13B', 'llama2_13B_response_v1.json')
     elif args.dataset == "dolly":
-        save_path = os.path.join(root, 'log', 'test_llama2_13B', 'llama2_13B_response_v1_dolly.json')
+        save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama2_13B', 'llama2_13B_response_v1_dolly.json')
 elif args.model_name == "llama3-8b":
     if args.dataset == "ragtruth":
-        save_path = os.path.join(root, 'log', 'test_llama3_8B', 'llama3_8B_response_v1.json')
+        save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama3_8B', 'llama3_8B_response_v1.json')
     elif args.dataset == "dolly":
-        save_path = os.path.join(root, 'log', 'test_llama3_8B', 'llama3_8B_response_v1_dolly.json')
+        save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama3_8B', 'llama3_8B_response_v1_dolly.json')
 else:
     print("model name error")
     exit(-1)
