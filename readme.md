@@ -34,6 +34,7 @@ python ./ReDeEP/chunk_level_reg.py --model_name llama2-7b/llama2-13b/llama3-8b -
 
 **ReDeEP(Token)**
 ```bash
+make run # llama2-7b with dolly
 python ./ReDeEP/token_level_detect.py --model_name llama2-7b/llama2-13b/llama3-8b --dataset ragtruth/dolly
 python ./ReDeEP/token_level_reg.py --model_name llama2-7b/llama2-13b/llama3-8b --dataset ragtruth/dolly
 ```

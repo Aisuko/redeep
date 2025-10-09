@@ -2,15 +2,21 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.getcwd()), 'transformers', 'src'))
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import json
 from torch.nn import functional as F
 from tqdm import tqdm
-import pdb
-import pickle
 import argparse
 from dotenv import load_dotenv
 from huggingface_hub import login
+import logging
+
+# Configure logger
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 login(token=os.getenv('hf_token'))
@@ -86,7 +92,7 @@ elif args.model_name == "llama2-13b":
 elif args.model_name == "llama3-8b":
     topk_head_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama3_8B', 'topk_heads.json')
 else:
-    print("model name error")
+    logger.error("model name error")
     exit(-1)
 
 with open(topk_head_path,'r') as f:
@@ -155,11 +161,11 @@ elif args.model_name == "llama2-13b":
 elif args.model_name == "llama3-8b":
     data_type =  "llama-3-8b-instruct" 
 else:
-    print("model name error")
+    logger.info("model name error")
     exit(-1) 
 
 # test response
-response = response[:2]
+# response = response[:2]
 
 for i in tqdm(range(len(response))):
     if response[i]['model'] == data_type and response[i]["split"] == "test":
@@ -172,18 +178,18 @@ for i in tqdm(range(len(response))):
                     {"role": "user", "content": prompt[:2000]}
                 ]
         
-        print(f"Prompt is {prompt[:2000]}")
+        # logger.info(f"Prompt is {prompt[:2000]}")
 
         text = tokenizer_for_temp.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
-        print(text)
+        # logger.info(f"Text: {text}")
         input_text = text+response_rag
-        print("all_text_len:", len(input_text))
-        print("prompt_len", len(prompt))
-        print("respond_len", len(response_rag))
+        logger.info(f"all_text_len: {len(input_text)}")
+        logger.info(f"prompt_len: {len(prompt)}")
+        logger.info(f"respond_len: {len(response_rag)}")
         input_ids = tokenizer([input_text], return_tensors="pt").input_ids.to(device)
         prefix_ids = tokenizer([text], return_tensors="pt").input_ids.to(device)
         continue_ids = input_ids[0, prefix_ids.shape[-1]:] # todo 这边要改成幻觉 token 的起止位置
@@ -203,16 +209,20 @@ for i in tqdm(range(len(response))):
             start = 0
             number = 40
         else:
-            print("model name error")
+            logger.info("model name error")
 
-        with torch.no_grad():
-            logits_dict, outputs = model(
-                    input_ids=input_ids,
-                    return_dict=True,
-                    output_attentions=True,
-                    output_hidden_states=True,
-                    knowledge_layers=list(range(start, number))
-                )
+        try:
+            with torch.no_grad():
+                logits_dict, outputs = model(
+                        input_ids=input_ids,
+                        return_dict=True,
+                        output_attentions=True,
+                        output_hidden_states=True,
+                        knowledge_layers=list(range(start, number))
+                    )
+        except Exception as e:
+            logger.exception(f"Error during model inference:{e}")
+            continue
         logits_dict = {key: [value[0].cpu(), value[1].cpu()] for key, value in logits_dict.items()}
 
         # skip tokens without hallucination
@@ -317,7 +327,7 @@ elif args.model_name == "llama3-8b":
     elif args.dataset == "dolly":
         save_path = os.path.join(root, 'ReDeEP', 'log', 'test_llama3_8B', 'llama3_8B_response_v1_dolly.json')
 else:
-    print("model name error")
+    logger.info("model name error")
     exit(-1)
 
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
