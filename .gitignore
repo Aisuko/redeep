@@ -7,3 +7,4 @@
 !.vscode/*.json
 !.devcontainer/*.json
 !ReDeEP/log/test_llama2_7B/llama2_7B_response_v1_dolly.json
+!ReDeEP/log/test_llama2_7B/ReDeEP(token).json
